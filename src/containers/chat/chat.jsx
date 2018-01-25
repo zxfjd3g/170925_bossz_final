@@ -4,6 +4,7 @@
 import React from 'react'
 import {connect} from 'react-redux'
 import {List, InputItem, NavBar, Icon, Grid} from 'antd-mobile'
+import QueueAnim from 'rc-queue-anim'
 
 import {sendMsg, readMsg} from '../../redux/actions'
 
@@ -89,25 +90,27 @@ class Chat extends React.Component {
           </NavBar>
         </div>
         <List style={{marginTop: 50, marginBottom: 50}}>
-          {chatMsgs.map(msg => {
-            const avatar = require(`../../assets/imgs/${users[msg.from].avatar}.png`)
-            if (msg.from === userid) {
-              return (
-                <Item
-                  key={msg._id}
-                  thumb={avatar}
-                >{msg.content}</Item>
-              )
-            } else {
-              return (
-                <Item
-                  key={msg._id}
-                  extra={<img src={avatar}/>}
-                  className='chat-me'
-                >{msg.content}</Item>
-              )
-            }
-          })}
+          <QueueAnim type='scale' delay={100}>
+            {chatMsgs.map(msg => {
+              const avatar = require(`../../assets/imgs/${users[msg.from].avatar}.png`)
+              if (msg.from === userid) {
+                return (
+                  <Item
+                    key={msg._id}
+                    thumb={avatar}
+                  >{msg.content}</Item>
+                )
+              } else {
+                return (
+                  <Item
+                    key={msg._id}
+                    extra={<img src={avatar}/>}
+                    className='chat-me'
+                  >{msg.content}</Item>
+                )
+              }
+            })}
+          </QueueAnim>
         </List>
 
         <div className="am-tab-bar">
