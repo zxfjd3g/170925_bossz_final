@@ -1,66 +1,73 @@
 /*
-应用路由模块
+定义后台处理请求的路由的模块
+1. 引入express
+2. 得到路由器
+3. 注册n个路由
+4. 向外暴露路由器
+5. 通过 app使用上路由器
  */
+// 引入express
 const express = require('express')
-const md5 = require('blueimp-md5')
+const md5 = require('blueimp-md5') // 对密码进行md5加密的函数
+// 得到路由器
 const router = express.Router()
-
+// 引入UserModel
 const models = require('./models')
 const UserModel = models.getModel('user')
 const ChatModel = models.getModel('chat')
-
 const _filter = {'pwd': 0, '__v': 0} // 查询时过滤掉
 
+// 注册的路由
 /*
-注册
+路由回调函数3步
+1. 获取请求参数
+2. 处理数据(与数据库交互)
+3. 返回响应
+ */
+/*
+响应数据结构说明:
+  {
+    code: 0,
+    data: xxx   // 客户端需要显示的数据
+  }
+  {
+    code: 1,
+    msg: '错误提示信息'
+  }
  */
 router.post('/register', function (req, res) {
-  // 1. 获取请求参数
+  //1. 获取请求参数
   const {name, pwd, type} = req.body
-  const {userid} = req.cookies
-  console.log('/register', name, pwd, type, userid)
-  // 2. 处理
-  UserModel.findOne({name}, function (err, doc) {
-    if (doc) {
-      // 3. 返回响应数据
-      return res.json({code: 1, msg: '用户名重复'})
+  // 2.1. 根据name查询是否存在
+  UserModel.findOne({name}, function (err, user) {
+    // 3.1. 如果存在返回重名提示响应
+    if (user) {
+      return res.send({code: 1, msg: '用户名已存在'})
     }
-
-    const userModel = new UserModel({name, type, pwd: md5(pwd)})
+    // 2.2. 保存数据
+    const userModel = new UserModel({name, pwd: md5(pwd), type})
     userModel.save(function (err, user) {
-      if (err) {
-        // 3. 返回响应数据
-        return res.json({code: 1, msg: '后端出错了'})
-      }
-
+      // 3.2. 保存完成后返回成功响应
       const {_id, name, type} = user
-      // 向浏览器端传递cookie
-      res.cookie('userid', _id)
-      // 3. 返回响应数据
-      return res.json({code: 0, data: {_id, name, type}})
+      res.cookie('userid', _id) // 向浏览器端传递cookie
+      res.json({code: 0, data: {_id, name, type}})
     })
   })
 })
 
-/*
-登陆
- */
+// 登陆的路由
 router.post('/login', function (req, res) {
   // 1. 获取请求参数
   const {name, pwd} = req.body
-  console.log('/login', name, pwd)
-  // 2. 处理
-  UserModel.findOne({name, pwd: md5(pwd)}, function (err, user) {
+  // 2. 根据name/pwd查询得到user
+  UserModel.findOne({name, pwd: md5(pwd)}, _filter, function (err, user) {
+    // 3.1. 如果user不存在, 返回错误提示响应
     if (!user) {
-      // 3. 返回响应数据
-      return res.json({code: 1, msg: '用户名或者密码错误'})
+      return res.json({code: 1, msg: '用户名或密码错误!'})
     }
-
-    // 将userid保存到cookie给浏览器
-    res.cookie('userid', user._id)
-    const {_id, type, avatar, desc, title, company, money} = user
-    // 3. 返回响应数据
-    return res.json({code: 0, data: {name, _id, type, avatar, desc, title, company, money}})
+    // 3.2. 如果user存在, 返回user响应
+    res.cookie('userid', _id) // 向浏览器端传递cookie
+    res.json({code: 0, data: user})
   })
 })
 
@@ -147,4 +154,5 @@ router.post('/readmsg', function (req, res) {
   })
 })
 
+// 向外暴露路由器
 module.exports = router
