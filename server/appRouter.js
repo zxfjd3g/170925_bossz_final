@@ -66,7 +66,7 @@ router.post('/login', function (req, res) {
       return res.json({code: 1, msg: '用户名或密码错误!'})
     }
     // 3.2. 如果user存在, 返回user响应
-    res.cookie('userid', _id) // 向浏览器端传递cookie
+    res.cookie('userid', user._id) // 向浏览器端传递cookie
     res.json({code: 0, data: user})
   })
 })
